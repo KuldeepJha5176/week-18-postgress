@@ -22,17 +22,40 @@ app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     const username = req.body.username;
     const password = req.body.password;
     const email = req.body.email;
+    const city = req.body.city;
+    const country = req.body.country;
+    const street = req.body.street;
+    const pincode = req.body.pincode;
     try {
-        const insertQuery = `INSERT INTO users (username, email, password) VALUES ($1, $2, $3);`;
-        const response = yield pgClient.query(insertQuery, [username, email, password]);
+        const insertQuery = `INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id;`;
+        const addressInsertQuery = `INSERT INTO addresses (city,
+      country,
+      pincode,
+      street,
+      user_id) VALUES ($1, $2, $3, $4, $5);`;
+        yield pgClient.query("BEGIN;"); //TRANSACTION BEGIN
+        const response1 = yield pgClient.query(insertQuery, [
+            username,
+            email,
+            password,
+        ]);
+        const userId = response1.rows[0].id;
+        const response2 = yield pgClient.query(addressInsertQuery, [
+            city,
+            country,
+            pincode,
+            street,
+            userId,
+        ]);
+        yield pgClient.query("COMMIT;"); //TRANSACTION END WILL POSSES BOTH QUERY OR NONE OF THEM
         res.json({
-            message: "You have signed up"
+            message: "You have signed up",
         });
     }
     catch (e) {
         console.log(e);
         res.json({
-            message: "Error while signing up"
+            message: "Error while signing up",
         });
     }
 }));
