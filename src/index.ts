@@ -1,29 +1,36 @@
-import {Client} from 'pg'
+
+import express from "express";
+import { Client } from "pg";
+
+const app = express();
+app.use(express.json());
 
 const pgClient = new Client("postgresql://neondb_owner:Leo5RbvZNg6z@ep-dawn-star-a538vrj5.us-east-2.aws.neon.tech/neondb?sslmode=require")
 
-try {
-    await client.connect();
-    const query = `
-        SELECT u.id, u.username, u.email, a.city, a.country, a.street, a.pincode
-        FROM users u
-        JOIN addresses a ON u.id = a.user_id
-        WHERE u.id = $1
-    `;
-    const result = await client.query(query, [userId]);
+pgClient.connect();
 
-    if (result.rows.length > 0) {
-        console.log('User and address found:', result.rows[0]);
-        return result.rows[0];
-    } else {
-        console.log('No user or address found with the given ID.');
-        return null;
+
+app.post("/signup", async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+    const email = req.body.email;
+
+    try {
+
+        const insertQuery = `INSERT INTO users (username, email, password) VALUES ($1, $2, $3);`
+
+        const response = await pgClient.query(insertQuery, [username, email, password]);
+
+        res.json({
+            message: "You have signed up"
+        })
+    } catch(e) {
+        console.log(e);
+        res.json({
+            message: "Error while signing up"
+        })
     }
-} catch (err) {
-    console.error('Error during fetching user and address:', err);
-    throw err;
-} finally {
-    await client.end();
-}
-}
-getUserDetailsWithAddress("1");
+
+})
+
+app.listen(3000)
