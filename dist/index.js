@@ -18,45 +18,15 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 const pgClient = new pg_1.Client("postgresql://neondb_owner:Leo5RbvZNg6z@ep-dawn-star-a538vrj5.us-east-2.aws.neon.tech/neondb?sslmode=require");
 pgClient.connect();
-app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const username = req.body.username;
-    const password = req.body.password;
-    const email = req.body.email;
-    const city = req.body.city;
-    const country = req.body.country;
-    const street = req.body.street;
-    const pincode = req.body.pincode;
-    try {
-        const insertQuery = `INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id;`;
-        const addressInsertQuery = `INSERT INTO addresses (city,
-      country,
-      pincode,
-      street,
-      user_id) VALUES ($1, $2, $3, $4, $5);`;
-        yield pgClient.query("BEGIN;"); //TRANSACTION BEGIN
-        const response1 = yield pgClient.query(insertQuery, [
-            username,
-            email,
-            password,
-        ]);
-        const userId = response1.rows[0].id;
-        const response2 = yield pgClient.query(addressInsertQuery, [
-            city,
-            country,
-            pincode,
-            street,
-            userId,
-        ]);
-        yield pgClient.query("COMMIT;"); //TRANSACTION END WILL POSSES BOTH QUERY OR NONE OF THEM
-        res.json({
-            message: "You have signed up",
-        });
-    }
-    catch (e) {
-        console.log(e);
-        res.json({
-            message: "Error while signing up",
-        });
-    }
+app.get("/METADATA", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.query.id;
+    const query = `SELECT u.id, u.username, u.email, a.city, a.country, a.street, a.pincode
+                 FROM users u
+                 JOIN addresses a ON u.id = a.user_id
+                 WHERE u.id = $1;`;
+    const response = yield pgClient.query(query, [id]);
+    res.json({
+        response: response.rows
+    });
 }));
 app.listen(3000);

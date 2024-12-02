@@ -10,46 +10,17 @@ const pgClient = new Client(
 
 pgClient.connect();
 
-app.post("/signup", async (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-  const email = req.body.email;
-  const city = req.body.city;
-  const country = req.body.country;
-  const street = req.body.street;
-  const pincode = req.body.pincode;
-
-  try {
-    const insertQuery = `INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id;`;
-    const addressInsertQuery = `INSERT INTO addresses (city,
-      country,
-      pincode,
-      street,
-      user_id) VALUES ($1, $2, $3, $4, $5);`;
-    await pgClient.query("BEGIN;"); //TRANSACTION BEGIN
-    const response1 = await pgClient.query(insertQuery, [
-      username,
-      email,
-      password,
-    ]);
-    const userId = response1.rows[0].id;
-    const response2 = await pgClient.query(addressInsertQuery, [
-      city,
-      country,
-      pincode,
-      street,
-      userId,
-    ]);
-    await pgClient.query("COMMIT;"); //TRANSACTION END WILL POSSES BOTH QUERY OR NONE OF THEM
+app.get("/METADATA", async (req, res) => {
+  const id = req.query.id;
+  const query = `SELECT u.id, u.username, u.email, a.city, a.country, a.street, a.pincode
+                 FROM users u
+                 JOIN addresses a ON u.id = a.user_id
+                 WHERE u.id = $1;`
+    const response =  await pgClient.query(query, [id]);
     res.json({
-      message: "You have signed up",
-    });
-  } catch (e) {
-    console.log(e);
-    res.json({
-      message: "Error while signing up",
-    });
-  }
-});
+        response: response.rows
+        
+    })           
 
+})
 app.listen(3000);
